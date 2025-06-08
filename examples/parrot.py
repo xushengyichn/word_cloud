@@ -8,6 +8,7 @@ Recreating an image similar to the parrot example.
 
 import os
 from PIL import Image
+import jieba
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -15,11 +16,30 @@ from scipy.ndimage import gaussian_gradient_magnitude
 
 from wordcloud import WordCloud, ImageColorGenerator
 
+def jieba_processing_txt(text, stopwords_path=None, userdict_list=None):
+    if userdict_list:
+        for word in userdict_list:
+            jieba.add_word(word)
+
+    seg_list = jieba.cut(text, cut_all=False)
+    words = [w.strip() for w in seg_list if len(w.strip()) > 1]
+
+    if stopwords_path:
+        with open(stopwords_path, encoding='utf-8') as f:
+            stopwords = set(f.read().splitlines())
+        words = [w for w in words if w not in stopwords]
+
+    return ' '.join(words)
+
 # get data directory (using getcwd() is needed to support running example in generated IPython notebook)
 d = os.path.dirname(__file__) if "__file__" in locals() else os.getcwd()
 
-# load wikipedia text on rainbow
-text = open(os.path.join(d, 'wiki_rainbow.txt'), encoding="utf-8").read()
+font_path = os.path.join(d, "fonts/SourceHanSerif/SourceHanSerifK-Light.otf")
+text_path = os.path.join(d, "wc_cn/CalltoArms.txt")
+stopwords_path = os.path.join(d, "wc_cn/stopwords_cn_en.txt")
+userdict_list = ['阿Ｑ', '孔乙己', '单四嫂子']
+text = open(text_path, encoding="utf-8").read()
+processed_text = jieba_processing_txt(text, stopwords_path=stopwords_path, userdict_list=userdict_list)
 
 # load image. This has been modified in gimp to be brighter and have more saturation.
 parrot_color = np.array(Image.open(os.path.join(d, "alice_color.png")))
@@ -39,6 +59,7 @@ parrot_mask[edges > .08] = 255
 # relative_scaling=0 means the frequencies in the data are reflected less
 # acurately but it makes a better picture
 wc = WordCloud(
+    font_path=font_path,
     max_words=5000,
     mask=parrot_mask,
     max_font_size=50,
@@ -52,7 +73,7 @@ wc = WordCloud(
 )
 
 # generate word cloud
-wc.generate(text)
+wc.generate(processed_text)
 plt.imshow(wc)
 
 # create coloring from image
