@@ -22,9 +22,9 @@ d = os.path.dirname(__file__) if "__file__" in locals() else os.getcwd()
 text = open(os.path.join(d, 'wiki_rainbow.txt'), encoding="utf-8").read()
 
 # load image. This has been modified in gimp to be brighter and have more saturation.
-parrot_color = np.array(Image.open(os.path.join(d, "parrot-by-jose-mari-gimenez2.jpg")))
+parrot_color = np.array(Image.open(os.path.join(d, "alice_color.png")))
 # subsample by factor of 3. Very lossy but for a wordcloud we don't really care.
-parrot_color = parrot_color[::3, ::3]
+# parrot_color = parrot_color[::3, ::3]
 
 # create mask  white is "masked out"
 parrot_mask = parrot_color.copy()
@@ -38,7 +38,18 @@ parrot_mask[edges > .08] = 255
 # create wordcloud. A bit sluggish, you can subsample more strongly for quicker rendering
 # relative_scaling=0 means the frequencies in the data are reflected less
 # acurately but it makes a better picture
-wc = WordCloud(max_words=2000, mask=parrot_mask, max_font_size=40, random_state=42, relative_scaling=0)
+wc = WordCloud(
+    max_words=5000,
+    mask=parrot_mask,
+    max_font_size=50,
+    min_font_size=2,
+    font_step=1,
+    scale=2,
+    prefer_horizontal=1.0,
+    relative_scaling=0,
+    random_state=42,
+    background_color="white"
+)
 
 # generate word cloud
 wc.generate(text)
