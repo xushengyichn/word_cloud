@@ -13,7 +13,7 @@ at the same time using wordcloud with jieba very convenient
 """
 
 import jieba
-jieba.enable_parallel(4)
+# jieba.enable_parallel(4)
 # Setting up parallel processes :4 ,but unable to run on Windows
 from os import path
 from imageio import imread
@@ -67,31 +67,25 @@ wc = WordCloud(font_path=font_path, background_color="white", max_words=2000, ma
                max_font_size=100, random_state=42, width=1000, height=860, margin=2,)
 
 
-wc.generate(jieba_processing_txt(text))
+if __name__ == '__main__':
+    wc.generate(jieba_processing_txt(text))
 
-# create coloring from image
-image_colors_default = ImageColorGenerator(back_coloring)
+    image_colors_default = ImageColorGenerator(back_coloring)
 
-plt.figure()
-# recolor wordcloud and show
-plt.imshow(wc, interpolation="bilinear")
-plt.axis("off")
-plt.show()
+    plt.figure()
+    plt.imshow(wc, interpolation="bilinear")
+    plt.axis("off")
+    plt.show()
 
-# save wordcloud
-wc.to_file(path.join(d, imgname1))
+    wc.to_file(path.join(d, imgname1))
 
-# create coloring from image
-image_colors_byImg = ImageColorGenerator(back_coloring)
+    image_colors_byImg = ImageColorGenerator(back_coloring)
 
-# show
-# we could also give color_func=image_colors directly in the constructor
-plt.imshow(wc.recolor(color_func=image_colors_byImg), interpolation="bilinear")
-plt.axis("off")
-plt.figure()
-plt.imshow(back_coloring, interpolation="bilinear")
-plt.axis("off")
-plt.show()
+    plt.imshow(wc.recolor(color_func=image_colors_byImg), interpolation="bilinear")
+    plt.axis("off")
+    plt.figure()
+    plt.imshow(back_coloring, interpolation="bilinear")
+    plt.axis("off")
+    plt.show()
 
-# save wordcloud
-wc.to_file(path.join(d, imgname2))
+    wc.to_file(path.join(d, imgname2))

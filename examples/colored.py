@@ -32,8 +32,18 @@ alice_coloring = np.array(Image.open(path.join(d, "alice_color.png")))
 stopwords = set(STOPWORDS)
 stopwords.add("said")
 
-wc = WordCloud(background_color="white", max_words=2000, mask=alice_coloring,
-               stopwords=stopwords, max_font_size=40, random_state=42)
+wc = WordCloud(
+    max_words=5000,
+    mask=alice_coloring,
+    max_font_size=50,
+    min_font_size=2,
+    font_step=1,
+    scale=2,
+    prefer_horizontal=1.0,
+    relative_scaling=0,
+    random_state=42,
+    background_color="white"
+)
 # generate word cloud
 wc.generate(text)
 
