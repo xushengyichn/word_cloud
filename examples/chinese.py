@@ -42,9 +42,9 @@ text = open(text_path, encoding="utf-8").read()
 processed_text = jieba_processing_txt(text, stopwords_path=stopwords_path, userdict_list=userdict_list)
 
 # load image. This has been modified in gimp to be brighter and have more saturation.
-parrot_color = np.array(Image.open(os.path.join(d, "parrot-by-jose-mari-gimenez2.jpg")))
+parrot_color = np.array(Image.open(os.path.join(d, "yanzi.png")))
 # subsample by factor of 3. Very lossy but for a wordcloud we don't really care.
-parrot_color = parrot_color[::3, ::3]
+# parrot_color = parrot_color[::3, ::3]
 
 # create mask  white is "masked out"
 parrot_mask = parrot_color.copy()
