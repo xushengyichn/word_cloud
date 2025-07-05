@@ -22,12 +22,14 @@ d = os.path.dirname(__file__) if "__file__" in locals() else os.getcwd()
 text = open(os.path.join(d, 'wiki_rainbow.txt'), encoding="utf-8").read()
 
 # load image. This has been modified in gimp to be brighter and have more saturation.
-parrot_color = np.array(Image.open(os.path.join(d, "parrot-by-jose-mari-gimenez2.jpg")))
+# parrot_color = np.array(Image.open(os.path.join(d, "parrot-by-jose-mari-gimenez2.jpg")))
+parrot_color = np.array(Image.open("/Users/shengyixu/Library/CloudStorage/OneDrive-Personal/NAS云同步/Drive/社会工作/2025年07月05日短视频竞赛/金汇社区卫生服务中心2.png"))
 # subsample by factor of 3. Very lossy but for a wordcloud we don't really care.
 parrot_color = parrot_color[::3, ::3]
 
-# create mask  white is "masked out"
+# create mask - white is "masked out" (transparent)
 parrot_mask = parrot_color.copy()
+# Set background to white (255, 255, 255)
 parrot_mask[parrot_mask.sum(axis=2) == 0] = 255
 
 # some finesse: we enforce boundaries between colors so they get less washed out.
@@ -38,7 +40,18 @@ parrot_mask[edges > .08] = 255
 # create wordcloud. A bit sluggish, you can subsample more strongly for quicker rendering
 # relative_scaling=0 means the frequencies in the data are reflected less
 # acurately but it makes a better picture
-wc = WordCloud(max_words=2000, mask=parrot_mask, max_font_size=40, random_state=42, relative_scaling=0)
+wc = WordCloud(
+    max_words=3000,           # 增加最大词数
+    mask=parrot_mask, 
+    max_font_size=25,         # 减小最大字体大小
+    min_font_size=5,          # 设置最小字体大小
+    random_state=42, 
+    relative_scaling=0.5,     # 增加相对缩放，让词频差异更明显
+    background_color='white',
+    width=800,                # 设置宽度
+    height=600,               # 设置高度
+    prefer_horizontal=0.7     # 70%的词水平排列，30%垂直排列
+)
 
 # generate word cloud
 wc.generate(text)
@@ -49,6 +62,7 @@ image_colors = ImageColorGenerator(parrot_color)
 wc.recolor(color_func=image_colors)
 plt.figure(figsize=(10, 10))
 plt.imshow(wc, interpolation="bilinear")
+plt.axis('off')  # Hide axes
 wc.to_file("parrot_new.png")
 
 plt.figure(figsize=(10, 10))
