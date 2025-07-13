@@ -1,0 +1,38 @@
+{
+  "生成时间": "2024-01-15 14:30:25",
+  "词云图片路径": "/Users/shengyixu/Desktop/wordcloud_example.png",
+  "词频文件": {
+    "路径": "/Users/shengyixu/Desktop/sample_frequencies.json",
+    "词汇数量": 40
+  },
+  "遮罩图片": {
+    "路径": "/Users/shengyixu/Desktop/mask_image.png",
+    "尺寸": [800, 600, 3]
+  },
+  "颜色图片": {
+    "路径": "/Users/shengyixu/Desktop/color_image.png",
+    "尺寸": [800, 600, 3]
+  },
+  "词云参数": {
+    "最大词数": 1000,
+    "最大字体大小": 30,
+    "最小字体大小": 1,
+    "相对缩放": 0.1,
+    "水平偏好": 0.7,
+    "边距": 10,
+    "背景颜色": "白色",
+    "颜色模式": "图片颜色",
+    "字体路径": "/System/Library/Fonts/STHeiti Medium.ttc"
+  },
+  "系统信息": {
+    "操作系统": "Darwin",
+    "Python版本": "3.9.7",
+    "WordCloud版本": "1.8.1"
+  },
+  "词频统计": {
+    "总词汇数": 40,
+    "最高频率": 200,
+    "最低频率": 2,
+    "平均频率": 45.5
+  }
+} 

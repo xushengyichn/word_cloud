@@ -3,12 +3,13 @@
 WordCloud GUI - 实时调整和预览词云生成
 =====================================
 基于PyQt5的GUI界面，支持实时调整参数和预览词云效果
-支持高分屏显示
+支持高分屏显示和黑夜模式
 """
 
 import sys
 import os
 import platform
+import json
 import numpy as np
 from PIL import Image
 import matplotlib.pyplot as plt
@@ -56,9 +57,12 @@ class WordCloudGUI(QMainWindow):
     
     def __init__(self):
         super().__init__()
+        self.dark_mode = False
+        self.current_word_frequencies = word_frequencies
         self.init_ui()
         self.init_data()
         self.setup_connections()
+        self.apply_theme()
         
     def init_ui(self):
         """初始化用户界面"""
@@ -90,61 +94,28 @@ class WordCloudGUI(QMainWindow):
         # 设置分割器比例
         splitter.setSizes([400, 1000])
         
-        # 设置样式
-        self.setStyleSheet("""
-            QMainWindow {
-                background-color: #f0f0f0;
-            }
-            QGroupBox {
-                font-weight: bold;
-                border: 2px solid #cccccc;
-                border-radius: 5px;
-                margin-top: 1ex;
-                padding-top: 10px;
-            }
-            QGroupBox::title {
-                subcontrol-origin: margin;
-                left: 10px;
-                padding: 0 5px 0 5px;
-            }
-            QSlider::groove:horizontal {
-                border: 1px solid #999999;
-                height: 8px;
-                background: #ffffff;
-                margin: 2px 0;
-                border-radius: 4px;
-            }
-            QSlider::handle:horizontal {
-                background: #4a90e2;
-                border: 1px solid #5c6ac4;
-                width: 18px;
-                margin: -2px 0;
-                border-radius: 9px;
-            }
-            QPushButton {
-                background-color: #4a90e2;
-                color: white;
-                border: none;
-                padding: 8px 16px;
-                border-radius: 4px;
-                font-weight: bold;
-            }
-            QPushButton:hover {
-                background-color: #357abd;
-            }
-            QPushButton:pressed {
-                background-color: #2d5986;
-            }
-        """)
-        
     def create_control_panel(self):
         """创建控制面板"""
         control_widget = QWidget()
         control_layout = QVBoxLayout(control_widget)
         
+        # 主题切换按钮
+        theme_layout = QHBoxLayout()
+        self.theme_btn = QPushButton("🌙 黑夜模式")
+        self.theme_btn.setCheckable(True)
+        theme_layout.addWidget(self.theme_btn)
+        theme_layout.addStretch()
+        control_layout.addLayout(theme_layout)
+        
         # 文件选择组
         file_group = QGroupBox("文件设置")
         file_layout = QVBoxLayout(file_group)
+        
+        # 词频文件选择
+        self.freq_btn = QPushButton("选择词频文件")
+        self.freq_label = QLabel("使用默认词频")
+        file_layout.addWidget(self.freq_btn)
+        file_layout.addWidget(self.freq_label)
         
         # 图片文件选择
         self.mask_btn = QPushButton("选择遮罩图片")
@@ -293,7 +264,11 @@ class WordCloudGUI(QMainWindow):
             
     def setup_connections(self):
         """设置信号连接"""
+        # 主题切换
+        self.theme_btn.toggled.connect(self.toggle_theme)
+        
         # 文件选择按钮
+        self.freq_btn.clicked.connect(self.select_frequency_file)
         self.mask_btn.clicked.connect(self.select_mask_file)
         self.color_btn.clicked.connect(self.select_color_file)
         
@@ -317,6 +292,195 @@ class WordCloudGUI(QMainWindow):
         # 预览定时器
         self.preview_timer.timeout.connect(self.update_preview)
         
+    def toggle_theme(self, checked):
+        """切换主题"""
+        self.dark_mode = checked
+        self.apply_theme()
+        
+    def apply_theme(self):
+        """应用主题样式"""
+        if self.dark_mode:
+            # 黑夜模式样式
+            self.setStyleSheet("""
+                QMainWindow {
+                    background-color: #2b2b2b;
+                    color: #ffffff;
+                }
+                QWidget {
+                    background-color: #2b2b2b;
+                    color: #ffffff;
+                }
+                QGroupBox {
+                    font-weight: bold;
+                    border: 2px solid #555555;
+                    border-radius: 5px;
+                    margin-top: 1ex;
+                    padding-top: 10px;
+                    background-color: #3b3b3b;
+                    color: #ffffff;
+                }
+                QGroupBox::title {
+                    subcontrol-origin: margin;
+                    left: 10px;
+                    padding: 0 5px 0 5px;
+                    color: #ffffff;
+                }
+                QSlider::groove:horizontal {
+                    border: 1px solid #666666;
+                    height: 8px;
+                    background: #444444;
+                    margin: 2px 0;
+                    border-radius: 4px;
+                }
+                QSlider::handle:horizontal {
+                    background: #4a90e2;
+                    border: 1px solid #5c6ac4;
+                    width: 18px;
+                    margin: -2px 0;
+                    border-radius: 9px;
+                }
+                QPushButton {
+                    background-color: #4a90e2;
+                    color: white;
+                    border: none;
+                    padding: 8px 16px;
+                    border-radius: 4px;
+                    font-weight: bold;
+                }
+                QPushButton:hover {
+                    background-color: #357abd;
+                }
+                QPushButton:pressed {
+                    background-color: #2d5986;
+                }
+                QPushButton:checked {
+                    background-color: #e74c3c;
+                }
+                QSpinBox, QComboBox {
+                    background-color: #444444;
+                    color: #ffffff;
+                    border: 1px solid #666666;
+                    border-radius: 3px;
+                    padding: 2px;
+                }
+                QLabel {
+                    color: #ffffff;
+                }
+                QSplitter::handle {
+                    background-color: #555555;
+                }
+            """)
+            self.theme_btn.setText("☀️ 白天模式")
+        else:
+            # 白天模式样式
+            self.setStyleSheet("""
+                QMainWindow {
+                    background-color: #f0f0f0;
+                    color: #000000;
+                }
+                QWidget {
+                    background-color: #f0f0f0;
+                    color: #000000;
+                }
+                QGroupBox {
+                    font-weight: bold;
+                    border: 2px solid #cccccc;
+                    border-radius: 5px;
+                    margin-top: 1ex;
+                    padding-top: 10px;
+                    background-color: #ffffff;
+                    color: #000000;
+                }
+                QGroupBox::title {
+                    subcontrol-origin: margin;
+                    left: 10px;
+                    padding: 0 5px 0 5px;
+                    color: #000000;
+                }
+                QSlider::groove:horizontal {
+                    border: 1px solid #999999;
+                    height: 8px;
+                    background: #ffffff;
+                    margin: 2px 0;
+                    border-radius: 4px;
+                }
+                QSlider::handle:horizontal {
+                    background: #4a90e2;
+                    border: 1px solid #5c6ac4;
+                    width: 18px;
+                    margin: -2px 0;
+                    border-radius: 9px;
+                }
+                QPushButton {
+                    background-color: #4a90e2;
+                    color: white;
+                    border: none;
+                    padding: 8px 16px;
+                    border-radius: 4px;
+                    font-weight: bold;
+                }
+                QPushButton:hover {
+                    background-color: #357abd;
+                }
+                QPushButton:pressed {
+                    background-color: #2d5986;
+                }
+                QPushButton:checked {
+                    background-color: #e74c3c;
+                }
+                QSpinBox, QComboBox {
+                    background-color: #ffffff;
+                    color: #000000;
+                    border: 1px solid #cccccc;
+                    border-radius: 3px;
+                    padding: 2px;
+                }
+                QLabel {
+                    color: #000000;
+                }
+                QSplitter::handle {
+                    background-color: #cccccc;
+                }
+            """)
+            self.theme_btn.setText("🌙 黑夜模式")
+        
+    def select_frequency_file(self):
+        """选择词频文件"""
+        file_path, _ = QFileDialog.getOpenFileName(
+            self, "选择词频文件", self.default_path, 
+            "JSON文件 (*.json);;文本文件 (*.txt);;所有文件 (*)"
+        )
+        if file_path:
+            try:
+                if file_path.endswith('.json'):
+                    # 加载JSON格式的词频文件
+                    with open(file_path, 'r', encoding='utf-8') as f:
+                        self.current_word_frequencies = json.load(f)
+                else:
+                    # 加载文本格式的词频文件
+                    word_freq = {}
+                    with open(file_path, 'r', encoding='utf-8') as f:
+                        for line in f:
+                            line = line.strip()
+                            if line and '\t' in line:
+                                word, freq = line.split('\t', 1)
+                                try:
+                                    word_freq[word] = int(freq)
+                                except ValueError:
+                                    word_freq[word] = 1
+                            elif line:
+                                word_freq[line] = 1
+                    self.current_word_frequencies = word_freq
+                
+                # 记录文件路径
+                self.current_freq_file_path = file_path
+                self.freq_label.setText(os.path.basename(file_path))
+                self.on_parameter_changed()
+                QMessageBox.information(self, "成功", f"已加载词频文件: {os.path.basename(file_path)}\n包含 {len(self.current_word_frequencies)} 个词汇")
+                
+            except Exception as e:
+                QMessageBox.warning(self, "错误", f"无法加载词频文件: {str(e)}")
+                
     def select_mask_file(self):
         """选择遮罩文件"""
         file_path, _ = QFileDialog.getOpenFileName(
@@ -326,6 +490,8 @@ class WordCloudGUI(QMainWindow):
         if file_path:
             try:
                 self.mask_image = np.array(Image.open(file_path))
+                # 记录文件路径
+                self.mask_file_path = file_path
                 self.mask_label.setText(os.path.basename(file_path))
                 self.on_parameter_changed()
             except Exception as e:
@@ -340,6 +506,8 @@ class WordCloudGUI(QMainWindow):
         if file_path:
             try:
                 self.color_image = np.array(Image.open(file_path))
+                # 记录文件路径
+                self.color_file_path = file_path
                 self.color_label.setText(os.path.basename(file_path))
                 self.on_parameter_changed()
             except Exception as e:
@@ -396,7 +564,7 @@ class WordCloudGUI(QMainWindow):
             )
             
             # 生成词云
-            wc.generate_from_frequencies(word_frequencies)
+            wc.generate_from_frequencies(self.current_word_frequencies)
             
             # 应用颜色
             color_mode = self.color_mode_combo.currentText()
@@ -442,10 +610,86 @@ class WordCloudGUI(QMainWindow):
         )
         if file_path:
             try:
+                # 保存词云图片
                 self.wordcloud.to_file(file_path)
-                QMessageBox.information(self, "成功", f"词云已保存到: {file_path}")
+                
+                # 保存生成参数配置文件
+                config_path = self.save_generation_config(file_path)
+                
+                QMessageBox.information(self, "成功", 
+                    f"词云已保存到: {file_path}\n"
+                    f"配置文件已保存到: {config_path}")
+                    
             except Exception as e:
                 QMessageBox.warning(self, "错误", f"保存失败: {str(e)}")
+                
+    def save_generation_config(self, image_path):
+        """保存生成参数配置文件"""
+        try:
+            # 获取当前时间
+            import datetime
+            current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            
+            # 收集所有生成参数
+            config = {
+                "生成时间": current_time,
+                "词云图片路径": image_path,
+                "词频文件": {
+                    "路径": getattr(self, 'current_freq_file_path', "默认词频"),
+                    "词汇数量": len(self.current_word_frequencies)
+                },
+                "遮罩图片": {
+                    "路径": getattr(self, 'mask_file_path', "未选择"),
+                    "尺寸": self.mask_image.shape if self.mask_image is not None else None
+                },
+                "颜色图片": {
+                    "路径": getattr(self, 'color_file_path', "未选择"),
+                    "尺寸": self.color_image.shape if self.color_image is not None else None
+                },
+                "词云参数": {
+                    "最大词数": self.max_words_spin.value(),
+                    "最大字体大小": self.max_font_spin.value(),
+                    "最小字体大小": self.min_font_spin.value(),
+                    "相对缩放": self.relative_scaling_slider.value() / 100.0,
+                    "水平偏好": self.horizontal_slider.value() / 100.0,
+                    "边距": self.margin_spin.value(),
+                    "背景颜色": self.bg_color_combo.currentText(),
+                    "颜色模式": self.color_mode_combo.currentText(),
+                    "字体路径": self.font_path
+                },
+                "系统信息": {
+                    "操作系统": platform.system(),
+                    "Python版本": platform.python_version(),
+                    "WordCloud版本": self.get_wordcloud_version()
+                },
+                "词频统计": {
+                    "总词汇数": len(self.current_word_frequencies),
+                    "最高频率": max(self.current_word_frequencies.values()) if self.current_word_frequencies else 0,
+                    "最低频率": min(self.current_word_frequencies.values()) if self.current_word_frequencies else 0,
+                    "平均频率": sum(self.current_word_frequencies.values()) / len(self.current_word_frequencies) if self.current_word_frequencies else 0
+                }
+            }
+            
+            # 生成配置文件路径（与图片同目录，同名但扩展名为.json）
+            config_path = os.path.splitext(image_path)[0] + "_config.json"
+            
+            # 保存配置文件
+            with open(config_path, 'w', encoding='utf-8') as f:
+                json.dump(config, f, ensure_ascii=False, indent=2)
+                
+            return config_path
+            
+        except Exception as e:
+            print(f"保存配置文件失败: {str(e)}")
+            return None
+            
+    def get_wordcloud_version(self):
+        """获取WordCloud版本"""
+        try:
+            import wordcloud
+            return wordcloud.__version__
+        except:
+            return "未知版本"
                 
     def toggle_preview(self):
         """切换预览模式"""
